@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber-Neon Tic Tac Toe</title>
+    <!-- Load Tailwind CSS for utility classes and responsiveness -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Neon Colors */
+            --neon-blue: #00FFFF; /* Cyan */
+            --neon-pink: #FF00FF; /* Magenta */
+            --dark-bg: #03031A;
+            --grid-line: #1e1e4a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .neon-title {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 5px var(--neon-blue), 0 0 15px var(--neon-blue), 0 0 30px var(--neon-blue), 0 0 50px var(--neon-blue);
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue); }
+            to { text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink); }
+        }
+
+        /* ------------------ Game Board ------------------ */
+
+        #game-board {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            box-shadow: 0 0 20px var(--neon-blue);
+            border: 2px solid var(--neon-blue);
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 90vw;
+            aspect-ratio: 1 / 1; /* Keep it square */
+        }
+
+        .cell {
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--grid-line);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(2rem, 10vw, 4rem);
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
+            user-select: none;
+            position: relative;
+        }
+
+        /* Cell Hover Effect */
+        .cell:not(.x-placed):not(.o-placed):hover {
+            background-color: rgba(0, 255, 255, 0.1);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        /* ------------------ Symbol Styling and Animations ------------------ */
+
+        .x-placed {
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+
+        .o-placed {
+            color: var(--neon-pink);
+            text-shadow: 0 0 5px var(--neon-pink);
+        }
+
+        /* Pop-in animation for move */
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .animate-pop-in {
+            animation: popIn 0.3s ease-out;
+        }
+
+        /* Winning Line Glow */
+        @keyframes winGlow {
+            from { box-shadow: 0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px; border-color: white; }
+            to { box-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-pink); border-color: var(--neon-pink); }
+        }
+        .winning-cell {
+            animation: winGlow 0.5s ease-in-out infinite alternate !important;
+            border-width: 4px !important;
+        }
+
+        /* ------------------ Modal/Popup ------------------ */
+
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        #modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #100b3f, #05021a);
+            padding: 40px 30px;
+            border-radius: 20px;
+            border: 2px solid var(--neon-pink);
+            box-shadow: 0 0 30px var(--neon-pink), 0 0 60px rgba(255, 0, 255, 0.5);
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.4s ease-out;
+        }
+
+        #modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        /* Button Styling */
+        .neon-button {
+            font-family: 'Orbitron', sans-serif;
+            background: var(--dark-bg);
+            color: white;
+            border: 2px solid var(--neon-blue);
+            border-radius: 9999px; /* Fully rounded */
+            padding: 10px 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+        }
+
+        .neon-button:hover {
+            box-shadow: 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink);
+            background: var(--neon-pink);
+            color: var(--dark-bg);
+            border-color: var(--neon-pink);
+        }
+
+        /* Celebration Effect (Simple Glow Burst on Win) */
+        .celebration-glow {
+            animation: burst 0.5s ease-out forwards;
+            position: relative;
+        }
+        @keyframes burst {
+            0% { box-shadow: 0 0 0 rgba(255, 255, 255, 0.7); }
+            50% { box-shadow: 0 0 50px var(--neon-pink), 0 0 100px var(--neon-blue); }
+            100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-xl mx-auto flex flex-col items-center p-4">
+
+        <!-- Welcome Screen (Initial View) -->
+        <div id="welcome-screen" class="p-6 md:p-10 rounded-xl bg-gray-900 bg-opacity-70 shadow-2xl transition duration-500 ease-in-out w-full transform scale-100">
+            <h1 class="text-4xl neon-title mb-6 text-center">CYBER TIC-TAC-TOE</h1>
+            <p class="text-gray-400 text-center mb-8">Enter player names to start the Game.</p>
+
+            <div class="space-y-6">
+                <div>
+                    <label for="player1-name" class="block text-sm font-medium mb-2 text-white">Player 1 (X) Name</label>
+                    <input type="text" id="player1-name"  placeholder="Enter Player 1 Name"
+                           class="w-full p-3 rounded-lg bg-gray-800 border-2 border-neon-blue focus:ring-2 focus:ring-neon-blue focus:border-neon-blue transition duration-300 text-lg">
+                </div>
+                <div>
+                    <label for="player2-name" class="block text-sm font-medium mb-2 text-white">Player 2 (O) Name</label>
+                    <input type="text" id="player2-name" placeholder="Enter Player 2 Name"
+                           class="w-full p-3 rounded-lg bg-gray-800 border-2 border-neon-pink focus:ring-2 focus:ring-neon-pink focus:border-neon-pink transition duration-300 text-lg">
+                </div>
+
+                <button id="start-game-btn" class="neon-button mt-8 w-full !border-neon-blue">
+                    Start Cyber Duel
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Screen (Hidden Initially) -->
+        <div id="game-screen" class="hidden w-full transition duration-500 ease-in-out transform scale-95 opacity-0">
+            <h2 id="current-turn" class="text-3xl text-center mb-6 font-bold tracking-wider" style="font-family: 'Orbitron', sans-serif;"></h2>
+
+            <div id="game-board" class="grid mx-auto">
+                <!-- Cells will be generated here by JavaScript -->
+            </div>
+
+            <div class="mt-8 flex justify-center space-x-4">
+                <button id="restart-btn-game" class="neon-button !border-neon-blue !py-2">Restart</button>
+                <button id="home-btn-game" class="neon-button !border-neon-pink !py-2">Go to Home Page</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Win/Draw Modal Overlay (Hidden Initially) -->
+    <div id="modal-overlay" aria-hidden="true">
+        <div class="modal-content">
+            <p id="modal-message" class="text-3xl font-bold mb-4 neon-title"></p>
+            <div id="celebration" class="w-16 h-16 mx-auto my-6 rounded-full celebration-glow">
+                <span class="text-5xl" role="img" aria-label="Celebration">✨</span>
+            </div>
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-6">
+                <button id="play-again-btn" class="neon-button">Play Again</button>
+                <button id="home-btn-modal" class="neon-button !border-neon-pink">Go to Home Page</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global Game State
+        const BOARD_SIZE = 9; // 3x3
+        let gameState = Array(BOARD_SIZE).fill(null);
+        let players = {
+            'X': { name: 'Player 1', symbol: 'X' },
+            'O': { name: 'Player 2', symbol: 'O' }
+        };
+        let currentPlayer = 'X';
+        let gameActive = false;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        // DOM Elements
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const boardElement = document.getElementById('game-board');
+        const currentTurnElement = document.getElementById('current-turn');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalMessage = document.getElementById('modal-message');
+
+        // Helper to get player object
+        const getPlayer = (symbol) => players[symbol];
+
+        // ------------------------------------
+        // 1. Initial Setup and Transitions
+        // ------------------------------------
+
+        function generateBoard() {
+            boardElement.innerHTML = '';
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell', 'rounded-xl', 'transition', 'duration-300');
+                cell.dataset.cellIndex = i;
+                cell.addEventListener('click', handleCellClick);
+                boardElement.appendChild(cell);
+            }
+        }
+
+        function startGame() {
+            const player1Name = document.getElementById('player1-name').value.trim() || 'Neo';
+            const player2Name = document.getElementById('player2-name').value.trim() || 'Trinity';
+
+            // Update player state
+            players['X'].name = player1Name;
+            players['O'].name = player2Name;
+            
+            // Set initial state
+            gameState = Array(BOARD_SIZE).fill(null);
+            currentPlayer = 'X';
+            gameActive = true;
+            generateBoard();
+            updateTurnDisplay();
+
+            // Screen transition (Welcome -> Game)
+            welcomeScreen.classList.add('hidden', 'scale-95', 'opacity-0');
+            gameScreen.classList.remove('hidden', 'scale-95', 'opacity-0');
+            gameScreen.classList.add('scale-100', 'opacity-100');
+        }
+
+        function goToHome() {
+             // Screen transition (Game -> Welcome)
+            gameScreen.classList.add('hidden', 'scale-95', 'opacity-0');
+            welcomeScreen.classList.remove('hidden', 'scale-95', 'opacity-0');
+            welcomeScreen.classList.add('scale-100', 'opacity-100');
+            // Hide modal if active
+            modalOverlay.classList.remove('active');
+        }
+
+        function restartGame() {
+            gameState.fill(null);
+            currentPlayer = 'X';
+            gameActive = true;
+            updateTurnDisplay();
+            boardElement.querySelectorAll('.cell').forEach(cell => {
+                cell.textContent = '';
+                cell.className = 'cell rounded-xl transition duration-300'; // Reset classes
+            });
+            modalOverlay.classList.remove('active');
+        }
+
+        // ------------------------------------
+        // 2. Game Logic
+        // ------------------------------------
+
+        function updateTurnDisplay() {
+            const player = getPlayer(currentPlayer);
+            const playerColor = currentPlayer === 'X' ? 'var(--neon-blue)' : 'var(--neon-pink)';
+            const opponentColor = currentPlayer === 'X' ? 'var(--neon-pink)' : 'var(--neon-blue)';
+
+            currentTurnElement.innerHTML = `
+                <span style="color: ${playerColor}; text-shadow: 0 0 10px ${playerColor}; transition: all 0.5s;">${player.name}</span>
+                <span class="text-gray-500 font-light text-xl mx-2">(${player.symbol})</span>
+                <span class="text-xl font-light tracking-normal" style="color: ${opponentColor};"> - Your Move</span>
+            `;
+        }
+
+        function handleCellClick(event) {
+            const clickedCell = event.target;
+            const clickedCellIndex = parseInt(clickedCell.dataset.cellIndex);
+
+            // Guard clauses
+            if (gameState[clickedCellIndex] !== null || !gameActive) {
+                return;
+            }
+
+            // 1. Update State and DOM
+            gameState[clickedCellIndex] = currentPlayer;
+            clickedCell.textContent = currentPlayer;
+            clickedCell.classList.add(
+                currentPlayer === 'X' ? 'x-placed' : 'o-placed',
+                'animate-pop-in' // Apply pop animation
+            );
+
+            // 2. Check for Win or Draw
+            if (checkForWin()) {
+                handleResult(currentPlayer);
+            } else if (gameState.every(cell => cell !== null)) {
+                handleResult(null); // It's a draw
+            } else {
+                // 3. Switch Player
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                updateTurnDisplay();
+            }
+        }
+
+        function checkForWin() {
+            for (let i = 0; i < winningConditions.length; i++) {
+                const condition = winningConditions[i];
+                const [a, b, c] = condition;
+                
+                if (gameState[a] !== null && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
+                    // Win detected! Highlight the cells.
+                    condition.forEach(index => {
+                        boardElement.querySelector(`[data-cell-index='${index}']`).classList.add('winning-cell');
+                    });
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // ------------------------------------
+        // 3. Game End Handling
+        // ------------------------------------
+
+        function handleResult(winnerSymbol) {
+            gameActive = false;
+
+            if (winnerSymbol) {
+                const winner = getPlayer(winnerSymbol);
+                modalMessage.innerHTML = `🎉 Congratulations, <span style="color: ${winnerSymbol === 'X' ? 'var(--neon-blue)' : 'var(--neon-pink)'}">${winner.name}</span> wins!`;
+            } else {
+                modalMessage.textContent = "It's a Cyber Draw!";
+            }
+
+            // Show modal with animation
+            modalOverlay.classList.add('active');
+            
+            // Apply celebration effect to the modal
+            const celebrationDiv = document.getElementById('celebration');
+            celebrationDiv.classList.remove('celebration-glow');
+            // Force reflow/re-render to restart the animation
+            void celebrationDiv.offsetWidth; 
+            celebrationDiv.classList.add('celebration-glow');
+        }
+
+
+        // ------------------------------------
+        // 4. Event Listeners
+        // ------------------------------------
+
+        document.getElementById('start-game-btn').addEventListener('click', startGame);
+        
+        // Game screen buttons
+        document.getElementById('restart-btn-game').addEventListener('click', restartGame);
+        document.getElementById('home-btn-game').addEventListener('click', goToHome);
+
+        // Modal buttons
+        document.getElementById('play-again-btn').addEventListener('click', restartGame);
+        document.getElementById('home-btn-modal').addEventListener('click', goToHome);
+
+
+        // Initial Call
+        window.onload = () => {
+            // Check if we are running in a small environment (like a phone/narrow window)
+            // If so, adjust the default name to be shorter for better display
+            if (window.innerWidth < 640) {
+                 document.getElementById('player1-name').value = 'P1';
+                 document.getElementById('player2-name').value = 'P2';
+            }
+            generateBoard(); // Ensure the board exists even on the welcome screen load
+        };
+
+    </script>
+</body>
+</html>

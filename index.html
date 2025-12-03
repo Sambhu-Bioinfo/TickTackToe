@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe Game</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        text-align: center;
+        background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: background 0.5s;
+    }
+
+    h1 {
+        color: #fff;
+        text-shadow: 2px 2px #000;
+    }
+
+    input {
+        padding: 10px;
+        font-size: 16px;
+        margin: 5px;
+        border-radius: 5px;
+        border: none;
+        outline: none;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        grid-template-rows: repeat(3, 100px);
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .cell {
+        background: #fff;
+        font-size: 48px;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        border-radius: 15px;
+        transition: transform 0.3s, background 0.3s;
+    }
+
+    .cell:hover {
+        transform: scale(1.1);
+        background: #ffe066;
+    }
+
+    .winner {
+        background: #00ff99 !important;
+        color: #fff;
+        animation: winnerAnim 1s infinite alternate;
+    }
+
+    @keyframes winnerAnim {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.2); }
+    }
+
+    #restart {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 18px;
+        border: none;
+        border-radius: 10px;
+        background-color: #ff4d6d;
+        color: #fff;
+        cursor: pointer;
+        transition: transform 0.3s, background 0.3s;
+    }
+
+    #restart:hover {
+        transform: scale(1.1);
+        background-color: #ff1a3c;
+    }
+</style>
+</head>
+<body>
+
+<h1>Tic Tac Toe</h1>
+<input type="text" id="player1" placeholder="Player 1 Name">
+<input type="text" id="player2" placeholder="Player 2 Name">
+<div class="grid">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+</div>
+<button id="restart">Restart Game</button>
+
+<script>
+    const cells = document.querySelectorAll('.cell');
+    const restartBtn = document.getElementById('restart');
+
+    let board = ["", "", "", "", "", "", "", "", ""];
+    let currentPlayer = "X";
+    let playerNames = ["Player 1", "Player 2"];
+    let gameOver = false;
+
+    function checkWinner() {
+        const winCombos = [
+            [0,1,2], [3,4,5], [6,7,8], // rows
+            [0,3,6], [1,4,7], [2,5,8], // columns
+            [0,4,8], [2,4,6]           // diagonals
+        ];
+
+        for(let combo of winCombos){
+            const [a,b,c] = combo;
+            if(board[a] && board[a] === board[b] && board[a] === board[c]){
+                cells[a].classList.add('winner');
+                cells[b].classList.add('winner');
+                cells[c].classList.add('winner');
+                const winnerName = currentPlayer === "X" ? playerNames[0] : playerNames[1];
+                setTimeout(() => alert(`${winnerName} Wins!`), 100);
+                gameOver = true;
+                return true;
+            }
+        }
+
+        if(!board.includes("") && !gameOver){
+            setTimeout(() => alert("It's a Tie!"), 100);
+            gameOver = true;
+            return true;
+        }
+        return false;
+    }
+
+    function handleClick(e){
+        const index = e.target.dataset.index;
+        if(board[index] === "" && !gameOver){
+            board[index] = currentPlayer;
+            e.target.textContent = currentPlayer;
+            e.target.style.color = currentPlayer === "X" ? "#ff4d6d" : "#4d79ff";
+            if(!checkWinner()){
+                currentPlayer = currentPlayer === "X" ? "O" : "X";
+            }
+        }
+    }
+
+    function restartGame(){
+        board = ["", "", "", "", "", "", "", "", ""];
+        currentPlayer = "X";
+        gameOver = false;
+        cells.forEach(cell => {
+            cell.textContent = "";
+            cell.classList.remove('winner');
+        });
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', handleClick));
+    restartBtn.addEventListener('click', restartGame);
+
+    // Update player names dynamically
+    document.getElementById('player1').addEventListener('input', e => {
+        playerNames[0] = e.target.value || "Player 1";
+    });
+    document.getElementById('player2').addEventListener('input', e => {
+        playerNames[1] = e.target.value || "Player 2";
+    });
+</script>
+<hr></hr>
+<a href="tick1.html" class="bottom-link">Modern Tick Tack Toe</a>
+
+</body>
+</html>
